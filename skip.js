@@ -5,7 +5,7 @@ var Player = {
     position: 0,
     curLevel: 0,
     score: 0,
-    shootDelay: 20,
+    shootDelay: 55,
     curDelay: 0,
 
     idleImg: new Image(16, 16),
@@ -16,9 +16,9 @@ var Player = {
     curImg: new Image(16, 16),
     
     tick: function(){
-        if(curDelay > 0){
-            curDelay++;
-            if(curDelay > 20) curDelay = 0;
+        if(Player.curDelay > 0){
+            Player.curDelay++;
+            if(Player.curDelay > 20) Player.curDelay = 0;
         }
     },
     
@@ -30,31 +30,52 @@ var Player = {
     },
     
     shootLeft: function(){
-        if(curDelay == 0){
-            playerShots.push({x: dx, y: dy, mx: -1, my: 0});
+        if(Player.curDelay == 0){
+            psX.push(dx);
+            psY.push(dy);
+            psMX.push(-2);
+            psMY.push(0);
         }
-    }
+    },
     
     shootRight: function(){
-        if(curDelay == 0){
-            playerShots.push({x: dx, y: dy, mx: 1, my: 0});
+        if(Player.curDelay == 0){
+            psX.push(dx);
+            psY.push(dy);
+            psMX.push(2);
+            psMY.push(0);
         }
-    }
+    },
     
     shootUp: function(){
-        if(curDelay == 0){
-            playerShots.push({x: dx, y: dy, mx: 0, my: -1});
+        if(Player.curDelay == 0){
+            psX.push(dx);
+            psY.push(dy);
+            psMX.push(0);
+            psMY.push(-2);
         }
     }
 };
 
 // each shot contains an x, y, mx, and my (mx and my are the amount moved per tick in x and y axes)
-var playerShots = [ ]
+var psX = [ ]
+var psY = [ ]
+var psMX = [ ]
+var psMY = [ ]
 
 function updateShots(canvas){
-    for(var i = 0; i < playerShots.length; i++){
-        playerShots[i].x+=playerShots[i].dx;
-        playerShots[i].y+=playerShots[i].dy;
+    for(var i = 0; i < psX.length; i++){
+        psX[i]+=psMX[i];
+        psY[i]+=psMY[i];
+        
+        if(psX[i]+6 < 0 || psX[i] > canvas.canvas.width || psY[i]+6 < 0){
+            psX.splice(i, 1);
+            psY.splice(i, 1);
+            psMX.splice(i, 1);
+            psMY.splice(i, 1);
+        }
+        
+        canvas.fillRect(psX[i]+29, psY[i]+39, 6, 6);
     }
 }
 
@@ -77,6 +98,31 @@ function init(){
     Player.upImg.src = "images/me_up.png";
     Player.carImg.src = "images/boomcar.png";
     Player.curImg.src = "images/me.png";
+    
+    document.addEventListener('keydown', function(event){
+                              if(event.keyCode == 65){
+                                Player.shootLeft();
+                                Player.curImg = Player.leftImg;
+                              }else if(event.keyCode == 68){
+                                Player.shootRight();
+                                Player.curImg = Player.rightImg;
+                              }else if(event.keyCode == 87){
+                                Player.shootUp();
+                                Player.curImg = Player.upImg;
+                              }
+                            });
+    
+    document.addEventListener('keyup', function(event){
+                                if(event.keyCode == 65 || event.keyCode == 68 || event.keyCode == 87) Player.curImg = Player.idleImg;
+                              });
+}
+
+// where r1 and r2 are objects with left, right, top, and bottom variables
+function intersectRect(r1, r2) {
+    return !(r2.left > r1.right ||
+             r2.right < r1.left ||
+             r2.top > r1.bottom ||
+             r2.bottom < r1.top);
 }
 
 // everything is called here in a loop
@@ -87,7 +133,7 @@ function loop(){
 
 // updates, etc are called from here
 function tick(){
-
+    Player.tick();
 }
 
 // stuff is drawn onto the canvas from here
@@ -102,5 +148,6 @@ function draw(){
     canvas.msImageSmoothingEnabled = false;
     canvas.clearRect(0, 0, window.innerWidth, window.innerHeight);
     
+    updateShots(canvas);
     Player.draw(canvas);
 }
